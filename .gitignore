@@ -1,0 +1,29 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Dependencies
+node_modules/
+.venv/
+venv/
+
+# Build and coverage output
+dist/
+coverage/
+.vite/
+*.tsbuildinfo
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+__pycache__/
+*.py[cod]
+
+# Environment and local configuration
+.env
+.env.*
+!.env.example
+*.local
+
+# Editors
+.vscode/
+.idea/
