@@ -9,7 +9,6 @@ import {
   Sparkles,
   NotebookPen,
   Target,
-  Settings,
 } from 'lucide-react'
 import type { NavigationItem } from '../../types/navigation'
 
@@ -24,5 +23,4 @@ export const navigationItems: NavigationItem[] = [
   { label: 'Insights', path: '/insights', icon: Sparkles },
   { label: 'Journal', path: '/journal', icon: NotebookPen },
   { label: 'Goals', path: '/goals', icon: Target },
-  { label: 'Settings', path: '/settings', icon: Settings },
 ]

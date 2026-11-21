@@ -1,4 +1,4 @@
-import { Moon, Plus, Search, Sun, UserRound } from 'lucide-react'
+import { Moon, Plus, Search, Settings as SettingsIcon, Sun, UserRound } from 'lucide-react'
 import { Link, NavLink } from 'react-router-dom'
 import { IconButton } from '../ui/IconButton'
 import { NotificationCenter } from './NotificationCenter'
@@ -47,6 +47,14 @@ export function Header({ theme, onToggleTheme }: HeaderProps) {
           >
             {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
           </IconButton>
+          <Link
+            to="/settings"
+            aria-label="Settings"
+            title="Settings"
+            className="grid size-10 place-items-center rounded-xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+          >
+            <SettingsIcon size={18} />
+          </Link>
           <NotificationCenter />
           <Link
             to="/timeline?log=1"
@@ -58,8 +66,8 @@ export function Header({ theme, onToggleTheme }: HeaderProps) {
         </div>
       </div>
 
-      <nav aria-label="Primary navigation" className="overflow-x-auto border-t border-slate-200/60 px-3 md:px-8">
-        <div className="flex h-12 min-w-max items-center gap-1">
+      <nav aria-label="Primary navigation" className="border-t border-slate-200/60 px-3 md:px-8">
+        <div className="flex min-h-12 flex-wrap items-center gap-1 py-1">
           {navigationItems.map((item) => {
             const Icon = item.icon
             return (
@@ -68,7 +76,7 @@ export function Header({ theme, onToggleTheme }: HeaderProps) {
                 to={item.path}
                 end={item.path === '/'}
                 className={({ isActive }) =>
-                  `flex h-9 items-center gap-2 rounded-lg px-3 text-xs font-semibold transition-colors ${
+                  `flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold transition-colors sm:gap-2 sm:px-3 ${
                     isActive
                       ? 'bg-[#e8f0ec] text-[#173a32]'
                       : 'text-slate-500 hover:bg-slate-100/80 hover:text-slate-900'
