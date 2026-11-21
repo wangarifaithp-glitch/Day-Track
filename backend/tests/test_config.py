@@ -30,6 +30,22 @@ def test_database_url_can_be_overridden_by_environment(
     assert Settings(_env_file=None).database_url == expected
 
 
+@pytest.mark.parametrize(
+    "database_url",
+    [
+        "postgres://daytrack:test-password@db.example.com/daywise",
+        "postgresql://daytrack:test-password@db.example.com/daywise",
+        "postgresql+psycopg2://daytrack:test-password@db.example.com/daywise",
+    ],
+)
+def test_database_url_uses_installed_psycopg_v3_driver(database_url: str) -> None:
+    settings = Settings(_env_file=None, database_url=database_url)
+
+    assert settings.database_url == (
+        "postgresql+psycopg://daytrack:test-password@db.example.com/daywise"
+    )
+
+
 def test_app_defaults_to_non_development_mode(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

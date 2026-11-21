@@ -25,6 +25,21 @@ class Settings(BaseSettings):
     vapid_subject: str = "mailto:daywise@example.invalid"
     reminder_poll_seconds: int = 15
 
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def use_psycopg_v3_driver(cls, value: object) -> object:
+        if not isinstance(value, str):
+            return value
+
+        for scheme in (
+            "postgres://",
+            "postgresql://",
+            "postgresql+psycopg2://",
+        ):
+            if value.startswith(scheme):
+                return f"postgresql+psycopg://{value[len(scheme):]}"
+        return value
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def parse_cors_origins(cls, value: object) -> object:
