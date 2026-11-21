@@ -1,6 +1,3 @@
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8000/api/v1'
-
 export class ApiError extends Error {
   constructor(message: string, readonly status: number) {
     super(message)
@@ -8,7 +5,22 @@ export class ApiError extends Error {
   }
 }
 
+const configuredApiUrl = import.meta.env.VITE_API_URL?.trim().replace(/\/+$/, '')
+const apiUrlIsLocal =
+  configuredApiUrl !== undefined &&
+  /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/i.test(configuredApiUrl)
+const API_BASE_URL =
+  configuredApiUrl || (import.meta.env.DEV ? 'http://127.0.0.1:8000/api/v1' : '')
+const API_CONFIGURATION_ERROR =
+  !API_BASE_URL || (!import.meta.env.DEV && apiUrlIsLocal)
+    ? 'The live API URL is not configured. Set VITE_API_URL to your backend URL ending in /api/v1, then rebuild the frontend.'
+    : ''
+
 export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  if (API_CONFIGURATION_ERROR) {
+    throw new ApiError(API_CONFIGURATION_ERROR, 0)
+  }
+
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     credentials: 'include',

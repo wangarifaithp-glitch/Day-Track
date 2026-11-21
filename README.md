@@ -31,7 +31,11 @@ The API supports account registration, email verification, sign-in, sign-out, pa
 | `SMTP_SENDER` | Verified sender email address. |
 | `SMTP_USE_SSL` | Set `true` for implicit TLS (usually port 465); otherwise STARTTLS is used. |
 
-Set `VITE_API_URL` on the frontend to the backend URL ending in `/api/v1`. Because the session cookie is HTTP-only, frontend API requests include credentials and backend CORS must use explicit origins. Browser state-changing requests are also checked against the configured origins.
+For a Render Static Site with the repository root as its root directory, use `cd frontend && npm install && npm run build` as the build command and `frontend/dist` as the publish directory. If `frontend` is the root directory, use `npm install && npm run build` and `dist`. Add the SPA rewrite `/*` to `/index.html` with status `200`.
+
+Set `VITE_API_URL` in the Static Site's **build environment variables** to the backend URL ending in `/api/v1` (for example, `https://your-api.onrender.com/api/v1`), then trigger a new deploy. Do not set it to `localhost` or `127.0.0.1` for the live site; those addresses refer to each visitor's device. The production frontend now fails with a configuration message instead of silently calling localhost when this value is missing or points to loopback.
+
+Set `APP_BASE_URL` to the exact public frontend origin, and include that same origin in backend `CORS_ORIGINS` without a trailing slash. Because the session cookie is HTTP-only, frontend API requests include credentials and backend CORS must use explicit origins. Browser state-changing requests are also checked against the configured origins.
 
 Auth endpoints (under `/api/v1/auth`):
 
