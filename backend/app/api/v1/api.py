@@ -1,9 +1,10 @@
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import activities, calendar, categories, goals, habits, health, journal, notifications, planner
+from app.api.v1.endpoints import activities, auth, calendar, categories, goals, habits, health, journal, notifications, planner
 
 api_router = APIRouter()
 api_router.include_router(health.router)
+api_router.include_router(auth.router)
 api_router.include_router(categories.router)
 api_router.include_router(activities.router)
 api_router.include_router(planner.router)

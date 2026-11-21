@@ -4,7 +4,7 @@ DAYTRACK is a mobile-first personal time management and self-improvement applica
 
 ## Current Workspace State
 
-The workspace includes persisted daily activity tracking, a responsive Goals page, Journal, and Habits tracker, a date-navigable Planner, real-data Insights, and a date-navigable event Calendar with reminders, backed by versioned FastAPI endpoints and SQLAlchemy models. Routines, focus tracking, AI, and authentication are not implemented yet.
+The workspace includes persisted activity tracking, Calendar, Planner, Goals, Journal, Habits, Insights, and email/password authentication with email verification, password reset, and per-user data ownership. Routines, focus tracking, and AI are not implemented yet.
 
 ## Daily Activity Tracking
 
@@ -14,7 +14,37 @@ The workspace includes persisted daily activity tracking, a responsive Goals pag
 - Completed activities require a positive time range. Overlapping activities are rejected, and an owner-scoped database index and PostgreSQL transaction lock prevent multiple active timers.
 - The dashboard totals and timeline are loaded from the API; no sample activity data is displayed.
 
-Authentication is not implemented. For local development only, activity, Planner, Calendar, notification, Goals, Journal, and Habits routes use a fixed development owner and are disabled with HTTP 503 unless `APP_ENV=development`. This is not a production identity or authorization system; add authentication and derive the owner ID from the authenticated user before deploying.
+In production, data routes require a verified account and scope records to the authenticated user. Local development keeps the fixed development owner when `APP_ENV=development` and no session cookie is present; never use that setting for a public deployment. Existing development records stay separate from newly registered accounts.
+
+## Authentication and Deployment Configuration
+
+The API supports account registration, email verification, sign-in, sign-out, password reset, and a current-user endpoint. Sessions use signed, HTTP-only cookies; passwords are Argon2-hashed, and verification/reset tokens are stored hashed and expire. Configure these environment variables on the backend:
+
+| Variable | Purpose |
+| --- | --- |
+| `APP_ENV` | Set to `production` on Render. |
+| `AUTH_SECRET_KEY` | Random secret of at least 32 characters used to sign sessions. Keep private. |
+| `APP_BASE_URL` | Public frontend origin used in email links, without a trailing slash. |
+| `CORS_ORIGINS` | Comma-separated exact frontend origins, without trailing slashes. |
+| `SMTP_HOST`, `SMTP_PORT` | SMTP server and port for verification and reset email. |
+| `SMTP_USERNAME`, `SMTP_PASSWORD` | SMTP credentials, if required by the provider. |
+| `SMTP_SENDER` | Verified sender email address. |
+| `SMTP_USE_SSL` | Set `true` for implicit TLS (usually port 465); otherwise STARTTLS is used. |
+
+Set `VITE_API_URL` on the frontend to the backend URL ending in `/api/v1`. Because the session cookie is HTTP-only, frontend API requests include credentials and backend CORS must use explicit origins. Browser state-changing requests are also checked against the configured origins.
+
+Auth endpoints (under `/api/v1/auth`):
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `POST` | `/register` | Create an unverified account and send a verification link. |
+| `POST` | `/verify-email` | Verify an account using the one-time email token. |
+| `POST` | `/resend-verification` | Resend an account verification link. |
+| `POST` | `/login` | Sign in and set the HTTP-only session cookie. |
+| `POST` | `/logout` | Clear the session cookie. |
+| `POST` | `/forgot-password` | Send a password reset link when the email belongs to an account. |
+| `POST` | `/reset-password` | Reset a password using its one-time email token. |
+| `GET` | `/me` | Return the currently authenticated user. |
 
 API endpoints (all under `/api/v1`):
 
@@ -353,7 +383,7 @@ The automated API tests use isolated SQLite databases. The current calendar migr
 1. **API versioning:** Keep route modules under `/api/v1`.
 2. **Database ownership:** SQLAlchemy models define persistence; Alembic owns schema migrations.
 3. **Authentication:** Use server-side secure, HTTP-only, SameSite session cookies rather than storing bearer tokens in browser storage.
-4. **Authorization:** Activity records have an owner ID and all activity queries are scoped to it. The fixed development owner must be replaced with an authenticated user dependency before production use.
+4. **Authorization:** Activity records have an owner ID and all activity queries are scoped to the verified account from the HTTP-only session cookie. Keep the fixed development owner restricted to local development.
 5. **Time handling:** Activity timestamps are stored and returned in UTC; the current UI uses the browser's local timezone for time entry and passes its local activity date. A persisted user IANA timezone is a future authentication/settings concern.
 6. **Activity model:** A timed activity with no end timestamp is active; completed duration is derived from its recorded timestamps.
 7. **Data identifiers:** Prefer UUID primary keys for public-facing entities.
@@ -368,7 +398,7 @@ The automated API tests use isolated SQLite databases. The current calendar migr
 
 - No secret or API key should exist in frontend environment variables or source.
 - Session signing secrets should be long, random, and environment-managed.
-- CSRF protection is required for cookie-authenticated state-changing requests.
+- Cookie-authenticated state-changing requests are checked against configured CORS origins.
 - Password and session data must be handled only on the backend.
 - CORS should not use wildcard origins when credentials are enabled.
 - Database and session secrets must be ignored by source control.

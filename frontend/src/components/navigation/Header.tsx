@@ -1,9 +1,10 @@
 import { Moon, Plus, Search, Settings as SettingsIcon, Sun, UserRound } from 'lucide-react'
-import { Link, NavLink } from 'react-router-dom'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { IconButton } from '../ui/IconButton'
 import { NotificationCenter } from './NotificationCenter'
 import { navigationItems } from './navigationItems'
 import { useAppearance } from '../../layouts/AppLayout'
+import { apiRequest } from '../../services/apiClient'
 
 type HeaderProps = {
   theme: 'light' | 'dark'
@@ -12,6 +13,16 @@ type HeaderProps = {
 
 export function Header({ theme, onToggleTheme }: HeaderProps) {
   const { profile } = useAppearance()
+  const navigate = useNavigate()
+
+  async function signOut() {
+    try {
+      await apiRequest('/auth/logout', { method: 'POST' })
+      navigate('/login', { replace: true })
+    } catch {
+      window.alert('Could not sign out because the server is unreachable. Please try again.')
+    }
+  }
 
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-[#f7f8f5]/95 backdrop-blur">
@@ -56,6 +67,15 @@ export function Header({ theme, onToggleTheme }: HeaderProps) {
             <SettingsIcon size={18} />
           </Link>
           <NotificationCenter />
+          {!import.meta.env.DEV && (
+            <button
+              type="button"
+              onClick={() => void signOut()}
+              className="h-10 rounded-xl px-2.5 text-xs font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
+            >
+              Sign out
+            </button>
+          )}
           <Link
             to="/timeline?log=1"
             className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#173a32] px-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#1d473d] focus:outline-none focus:ring-2 focus:ring-emerald-500/30"

@@ -2,8 +2,11 @@ import asyncio
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from starlette.middleware.base import RequestResponseEndpoint
+from starlette.responses import Response
 
 from app.api.v1.api import api_router
 from app.core.config import get_settings
@@ -39,6 +42,25 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def validate_request_origin(
+    request: Request,
+    call_next: RequestResponseEndpoint,
+) -> Response:
+    origin = request.headers.get("origin")
+    if (
+        request.method in {"POST", "PUT", "PATCH", "DELETE"}
+        and origin is not None
+        and origin not in settings.cors_origins
+    ):
+        return JSONResponse(
+            status_code=403,
+            content={"detail": "This request origin is not allowed."},
+        )
+    return await call_next(request)
+
 
 app.include_router(api_router, prefix=settings.api_v1_prefix)
 

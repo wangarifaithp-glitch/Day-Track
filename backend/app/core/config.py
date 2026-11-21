@@ -20,6 +20,14 @@ class Settings(BaseSettings):
     api_v1_prefix: str = "/api/v1"
     database_url: str = "postgresql+psycopg://daywise:change-me@localhost:5432/daywise"
     cors_origins: list[str] = ["http://localhost:5173", "http://127.0.0.1:5173"]
+    auth_secret_key: str = ""
+    app_base_url: str = "http://localhost:5173"
+    smtp_host: str | None = None
+    smtp_port: int = 587
+    smtp_username: str | None = None
+    smtp_password: str | None = None
+    smtp_sender: str | None = None
+    smtp_use_ssl: bool = False
     vapid_private_key_file: Path | None = None
     vapid_public_key: str | None = None
     vapid_subject: str = "mailto:daywise@example.invalid"
