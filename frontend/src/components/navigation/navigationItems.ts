@@ -10,7 +10,6 @@ import {
   NotebookPen,
   Target,
   Settings,
-  UserRound,
 } from 'lucide-react'
 import type { NavigationItem } from '../../types/navigation'
 
@@ -26,5 +25,4 @@ export const navigationItems: NavigationItem[] = [
   { label: 'Journal', path: '/journal', icon: NotebookPen },
   { label: 'Goals', path: '/goals', icon: Target },
   { label: 'Settings', path: '/settings', icon: Settings },
-  { label: 'Profile', path: '/profile', icon: UserRound },
 ]

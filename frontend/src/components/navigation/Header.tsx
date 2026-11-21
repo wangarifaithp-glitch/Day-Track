@@ -1,4 +1,4 @@
-import { Moon, Plus, Search, Sun } from 'lucide-react'
+import { Moon, Plus, Search, Sun, UserRound } from 'lucide-react'
 import { Link, NavLink } from 'react-router-dom'
 import { IconButton } from '../ui/IconButton'
 import { NotificationCenter } from './NotificationCenter'
@@ -17,6 +17,18 @@ export function Header({ theme, onToggleTheme }: HeaderProps) {
     <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-[#f7f8f5]/95 backdrop-blur">
       <div className="flex h-[72px] items-center justify-between px-4 md:px-8">
         <div className="flex items-center gap-4">
+          <Link
+            to="/profile"
+            aria-label="Your profile"
+            title="Your profile"
+            className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-full bg-[#e8f0ec] text-[#173a32] ring-1 ring-slate-200 transition hover:ring-emerald-600"
+          >
+            {profile.photo ? (
+              <img src={profile.photo} alt="" className="size-full object-cover" />
+            ) : (
+              <UserRound size={18} />
+            )}
+          </Link>
           <Link to="/" className="flex items-center gap-3">
             <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[#173a32] text-sm font-bold text-white">D</span>
             <span className="hidden text-[17px] font-bold tracking-[0.12em] text-slate-900 sm:inline">DAYTRACK</span>
@@ -63,15 +75,7 @@ export function Header({ theme, onToggleTheme }: HeaderProps) {
                   }`
                 }
               >
-                {item.path === '/profile' && profile.photo ? (
-                  <img
-                    src={profile.photo}
-                    alt=""
-                    className="size-5 rounded-full object-cover"
-                  />
-                ) : (
-                  <Icon size={15} />
-                )}
+                <Icon size={15} />
                 <span>{item.label}</span>
               </NavLink>
             )
