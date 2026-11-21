@@ -14,11 +14,14 @@ const normalizedApiUrl = configuredApiUrl
     ? configuredApiUrl
     : `${configuredApiUrl}/api/v1`
   : ''
+const defaultApiUrl = import.meta.env.DEV
+  ? 'http://127.0.0.1:8000/api/v1'
+  : 'https://day-track.onrender.com/api/v1'
 const API_BASE_URL =
-  normalizedApiUrl || (import.meta.env.DEV ? 'http://127.0.0.1:8000/api/v1' : '')
+  normalizedApiUrl || defaultApiUrl
 const API_CONFIGURATION_ERROR =
-  !API_BASE_URL || (!import.meta.env.DEV && apiUrlIsLocal)
-    ? 'The live API URL is not configured. Set VITE_API_URL to your backend URL ending in /api/v1, then rebuild the frontend.'
+  !import.meta.env.DEV && apiUrlIsLocal
+    ? 'VITE_API_URL points to localhost in the production build. Set it to the public backend URL ending in /api/v1.'
     : ''
 
 export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
@@ -26,14 +29,25 @@ export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T
     throw new ApiError(API_CONFIGURATION_ERROR, 0)
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...init,
-    credentials: 'include',
-    headers: {
-      ...(init?.body ? { 'Content-Type': 'application/json' } : {}),
-      ...init?.headers,
-    },
-  })
+  let response: Response
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      ...init,
+      credentials: 'include',
+      headers: {
+        ...(init?.body ? { 'Content-Type': 'application/json' } : {}),
+        ...init?.headers,
+      },
+    })
+  } catch (error) {
+    if (error instanceof TypeError) {
+      throw new ApiError(
+        'Could not reach the DAYTRACK API. Check your connection, API URL, and backend CORS settings.',
+        0,
+      )
+    }
+    throw error
+  }
 
   if (!response.ok) {
     if (response.status === 401) {

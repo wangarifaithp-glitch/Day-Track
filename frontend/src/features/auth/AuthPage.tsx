@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Eye, EyeOff } from 'lucide-react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { apiRequest, getErrorMessage } from '../../services/apiClient'
@@ -55,6 +55,17 @@ export function AuthPage() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
+
+  useEffect(() => {
+    setError('')
+    setNotice('')
+    setPassword('')
+    setConfirmPassword('')
+    if (mode !== 'signup') {
+      setFirstName('')
+      setLastName('')
+    }
+  }, [mode, token])
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()

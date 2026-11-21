@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+psycopg://daywise:change-me@localhost:5432/daywise"
     cors_origins: list[str] = ["http://localhost:5173", "http://127.0.0.1:5173"]
     auth_secret_key: str = ""
-    app_base_url: str = "http://localhost:5173"
+    app_base_url: str = "https://day-track-1.onrender.com"
     smtp_host: str | None = None
     smtp_port: int = 587
     smtp_username: str | None = None

@@ -66,6 +66,14 @@ def test_app_defaults_to_non_development_mode(
     assert Settings(_env_file=None).app_env == "production"
 
 
+def test_app_base_url_defaults_to_the_live_frontend(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("APP_BASE_URL", raising=False)
+
+    assert Settings(_env_file=None).app_base_url == "https://day-track-1.onrender.com"
+
+
 def test_backend_env_file_path_is_independent_of_current_directory() -> None:
     from pathlib import Path
 

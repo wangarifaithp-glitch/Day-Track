@@ -34,7 +34,8 @@ def auth_setup(monkeypatch: pytest.MonkeyPatch) -> list[tuple[str, str, str]]:
 
 def _token_from_email(body: str) -> str:
     link = next(line for line in body.splitlines() if line.startswith("https://"))
-    return parse_qs(urlparse(link).query)["token"][0]
+    query = urlparse(link).fragment.partition("?")[2]
+    return parse_qs(query)["token"][0]
 
 
 def test_signup_verification_login_and_http_only_session(
@@ -48,6 +49,10 @@ def test_signup_verification_login_and_http_only_session(
     assert registration.status_code == 202
     assert registration.json()["message"] == "Check your email for a verification link."
     assert auth_setup[0][0] == "person@example.com"
+    verification_link = next(
+        line for line in auth_setup[0][2].splitlines() if line.startswith("https://")
+    )
+    assert urlparse(verification_link).fragment.startswith("/verify-email?")
 
     verification_token = _token_from_email(auth_setup[0][2])
     verification = client.post(

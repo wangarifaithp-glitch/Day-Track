@@ -1,6 +1,7 @@
 from datetime import UTC, datetime, timedelta
 import hashlib
 import secrets
+from urllib.parse import urlencode
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy import select
@@ -42,6 +43,11 @@ def _public_user(user: User) -> UserRead:
         name=user.name,
         is_verified=user.is_verified,
     )
+
+
+def _frontend_action_url(path: str, token: str) -> str:
+    base_url = get_settings().app_base_url.rstrip("/")
+    return f"{base_url}/#/{path.lstrip('/')}?{urlencode({'token': token})}"
 
 
 def _issue_action_token(
@@ -124,10 +130,7 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)) -> Message
         ) from error
 
     token = _issue_action_token(db, user, "verify_email", timedelta(hours=24))
-    verify_url = (
-        f"{get_settings().app_base_url.rstrip('/')}/verify-email"
-        f"?token={token}"
-    )
+    verify_url = _frontend_action_url("verify-email", token)
     send_email(
         user.email,
         "Verify your DAYTRACK account",
@@ -155,10 +158,7 @@ def resend_verification(
     user = db.scalar(select(User).where(User.email == str(payload.email)))
     if user is not None and not user.is_verified:
         token = _issue_action_token(db, user, "verify_email", timedelta(hours=24))
-        verify_url = (
-            f"{get_settings().app_base_url.rstrip('/')}/verify-email"
-            f"?token={token}"
-        )
+        verify_url = _frontend_action_url("verify-email", token)
         send_email(
             user.email,
             "Verify your DAYTRACK account",
@@ -231,10 +231,7 @@ def forgot_password(
     user = db.scalar(select(User).where(User.email == str(payload.email)))
     if user is not None and user.is_verified:
         token = _issue_action_token(db, user, "reset_password", timedelta(hours=1))
-        reset_url = (
-            f"{get_settings().app_base_url.rstrip('/')}/reset-password"
-            f"?token={token}"
-        )
+        reset_url = _frontend_action_url("reset-password", token)
         send_email(
             user.email,
             "Reset your DAYTRACK password",
