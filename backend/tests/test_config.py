@@ -15,6 +15,19 @@ def test_cors_origins_are_loaded_from_comma_separated_value() -> None:
     ]
 
 
+def test_frontend_url_is_included_in_allowed_origins() -> None:
+    settings = Settings(
+        _env_file=None,
+        app_base_url="https://day-track-1.onrender.com/",
+        cors_origins=["http://localhost:5173/"],
+    )
+
+    assert settings.allowed_origins == [
+        "http://localhost:5173",
+        "https://day-track-1.onrender.com",
+    ]
+
+
 def test_database_url_has_a_default() -> None:
     settings = Settings(_env_file=None)
 

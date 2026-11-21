@@ -9,8 +9,13 @@ const configuredApiUrl = import.meta.env.VITE_API_URL?.trim().replace(/\/+$/, ''
 const apiUrlIsLocal =
   configuredApiUrl !== undefined &&
   /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/i.test(configuredApiUrl)
+const normalizedApiUrl = configuredApiUrl
+  ? /\/api\/v1$/i.test(configuredApiUrl)
+    ? configuredApiUrl
+    : `${configuredApiUrl}/api/v1`
+  : ''
 const API_BASE_URL =
-  configuredApiUrl || (import.meta.env.DEV ? 'http://127.0.0.1:8000/api/v1' : '')
+  normalizedApiUrl || (import.meta.env.DEV ? 'http://127.0.0.1:8000/api/v1' : '')
 const API_CONFIGURATION_ERROR =
   !API_BASE_URL || (!import.meta.env.DEV && apiUrlIsLocal)
     ? 'The live API URL is not configured. Set VITE_API_URL to your backend URL ending in /api/v1, then rebuild the frontend.'

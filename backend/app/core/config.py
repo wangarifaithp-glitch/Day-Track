@@ -55,6 +55,14 @@ class Settings(BaseSettings):
             return [origin.strip() for origin in value.split(",") if origin.strip()]
         return value
 
+    @property
+    def allowed_origins(self) -> list[str]:
+        origins = [origin.rstrip("/") for origin in self.cors_origins if origin.strip()]
+        frontend_origin = self.app_base_url.rstrip("/")
+        if frontend_origin and frontend_origin not in origins:
+            origins.append(frontend_origin)
+        return origins
+
 
 @lru_cache
 def get_settings() -> Settings:

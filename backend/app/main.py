@@ -37,7 +37,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins,
+    allow_origins=settings.allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -53,7 +53,7 @@ async def validate_request_origin(
     if (
         request.method in {"POST", "PUT", "PATCH", "DELETE"}
         and origin is not None
-        and origin not in settings.cors_origins
+        and origin not in settings.allowed_origins
     ):
         return JSONResponse(
             status_code=403,
