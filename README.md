@@ -4,7 +4,7 @@ DAYTRACK is a mobile-first personal time management and self-improvement applica
 
 ## Current Workspace State
 
-The workspace includes persisted activity tracking, Calendar, Planner, Goals, Journal, Habits, Insights, and email/password authentication with email verification, password reset, and per-user data ownership. Routines, focus tracking, and AI are not implemented yet.
+The workspace includes persisted activity tracking, Calendar, Planner, Goals, Journal, Habits, Insights, and account registration with email/password login, password reset, and per-user data ownership. Accounts are active immediately after registration; email verification is not required. Routines, focus tracking, and AI are not implemented yet.
 
 ## Daily Activity Tracking
 
@@ -14,11 +14,11 @@ The workspace includes persisted activity tracking, Calendar, Planner, Goals, Jo
 - Completed activities require a positive time range. Overlapping activities are rejected, and an owner-scoped database index and PostgreSQL transaction lock prevent multiple active timers.
 - The dashboard totals and timeline are loaded from the API; no sample activity data is displayed.
 
-In production, data routes require a verified account and scope records to the authenticated user. Local development keeps the fixed development owner when `APP_ENV=development` and no session cookie is present; never use that setting for a public deployment. Existing development records stay separate from newly registered accounts.
+In production, data routes require an authenticated account and scope records to that user. Local development keeps the fixed development owner when `APP_ENV=development` and no session cookie is present; never use that setting for a public deployment. Existing development records stay separate from newly registered accounts.
 
 ## Authentication and Deployment Configuration
 
-The API supports account registration, email verification, sign-in, sign-out, password reset, and a current-user endpoint. Sessions use signed, HTTP-only cookies; passwords are Argon2-hashed, and verification/reset tokens are stored hashed and expire. Configure these environment variables on the backend:
+The API supports account registration, sign-in, sign-out, password reset, and a current-user endpoint. Registration immediately activates the account and starts a signed, HTTP-only session; no verification email is required. Passwords are Argon2-hashed, and password-reset tokens are stored hashed and expire. Configure these environment variables on the backend:
 
 | Variable | Purpose |
 | --- | --- |
@@ -26,12 +26,12 @@ The API supports account registration, email verification, sign-in, sign-out, pa
 | `AUTH_SECRET_KEY` | Random secret of at least 32 characters used to sign sessions. Keep private. |
 | `APP_BASE_URL` | Public frontend origin used in email links and automatically included in the backend's allowed origins, without a trailing slash. |
 | `CORS_ORIGINS` | Comma-separated exact frontend origins, without trailing slashes. |
-| `SMTP_HOST`, `SMTP_PORT` | SMTP server and port for verification and reset email. |
+| `SMTP_HOST`, `SMTP_PORT` | SMTP server and port for password-reset email. |
 | `SMTP_USERNAME`, `SMTP_PASSWORD` | SMTP credentials, if required by the provider. |
 | `SMTP_SENDER` | Verified sender email address. |
 | `SMTP_USE_SSL` | Set `true` for implicit TLS (usually port 465); otherwise STARTTLS is used. |
 
-For a Render Static Site with the repository root as its root directory, use `cd frontend && npm install && npm run build` as the build command and `frontend/dist` as the publish directory. If `frontend` is the root directory, use `npm install && npm run build` and `dist`. The frontend uses hash-based routes, so direct sign-in and verification links work without a Static Site rewrite.
+For a Render Static Site with the repository root as its root directory, use `cd frontend && npm install && npm run build` as the build command and `frontend/dist` as the publish directory. If `frontend` is the root directory, use `npm install && npm run build` and `dist`. The frontend uses hash-based routes, so sign-in and password-reset links work without a Static Site rewrite.
 
 The production frontend defaults to `https://day-track.onrender.com/api/v1`. For another deployment, set `VITE_API_URL` in the Static Site's **build environment variables** to that backend URL ending in `/api/v1`. Do not set it to `localhost` or `127.0.0.1` for the live site; those addresses refer to each visitor's device. A backend URL that omits `/api/v1` is normalized automatically.
 
@@ -41,9 +41,7 @@ Auth endpoints (under `/api/v1/auth`):
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| `POST` | `/register` | Create an unverified account and send a verification link. |
-| `POST` | `/verify-email` | Verify an account using the one-time email token. |
-| `POST` | `/resend-verification` | Resend an account verification link. |
+| `POST` | `/register` | Create an active account and set its session cookie. |
 | `POST` | `/login` | Sign in and set the HTTP-only session cookie. |
 | `POST` | `/logout` | Clear the session cookie. |
 | `POST` | `/forgot-password` | Send a password reset link when the email belongs to an account. |

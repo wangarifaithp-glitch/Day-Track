@@ -2,10 +2,13 @@ from urllib.parse import parse_qs, urlparse
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import select
 
 from app.api.v1.endpoints import auth as auth_endpoints
 from app.core import auth as auth_core, development as development_core
 from app.core.config import Settings
+from app.db.session import get_db
+from app.models.user import User
 from app.services import auth_email
 
 
@@ -38,37 +41,27 @@ def _token_from_email(body: str) -> str:
     return parse_qs(query)["token"][0]
 
 
-def test_signup_verification_login_and_http_only_session(
+def test_signup_activates_account_and_starts_session_without_email(
     client: TestClient,
     auth_setup: list[tuple[str, str, str]],
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    monkeypatch.setattr(
+        auth_endpoints,
+        "require_email_configuration",
+        lambda: pytest.fail("Registration must not require SMTP."),
+    )
     registration = client.post(
         "/api/v1/auth/register",
         json={"name": "Day Tracker", "email": "Person@Example.com", "password": "secure-pass-123"},
     )
-    assert registration.status_code == 202
-    assert registration.json()["message"] == "Check your email for a verification link."
-    assert auth_setup[0][0] == "person@example.com"
-    verification_link = next(
-        line for line in auth_setup[0][2].splitlines() if line.startswith("https://")
-    )
-    assert urlparse(verification_link).fragment.startswith("/verify-email?")
-
-    verification_token = _token_from_email(auth_setup[0][2])
-    verification = client.post(
-        "/api/v1/auth/verify-email",
-        json={"token": verification_token},
-    )
-    assert verification.status_code == 200
-
-    login = client.post(
-        "/api/v1/auth/login",
-        json={"email": "person@example.com", "password": "secure-pass-123"},
-    )
-    assert login.status_code == 200
-    assert "access_token" not in login.json()
-    assert "httponly" in login.headers["set-cookie"].lower()
-    assert "secure" in login.headers["set-cookie"].lower()
+    assert registration.status_code == 201
+    assert registration.json()["user"]["email"] == "person@example.com"
+    assert registration.json()["user"]["is_verified"] is True
+    assert auth_setup == []
+    assert "access_token" not in registration.json()
+    assert "httponly" in registration.headers["set-cookie"].lower()
+    assert "secure" in registration.headers["set-cookie"].lower()
     session_cookie = client.cookies.get("daytrack_session")
     assert session_cookie
     client.cookies.clear()
@@ -86,7 +79,7 @@ def test_signup_verification_login_and_http_only_session(
     assert client.get("/api/v1/auth/me").status_code == 401
 
 
-def test_unverified_account_cannot_login(
+def test_legacy_unverified_account_can_login_without_verification_email(
     client: TestClient,
     auth_setup: list[tuple[str, str, str]],
 ) -> None:
@@ -95,11 +88,23 @@ def test_unverified_account_cannot_login(
         json={"name": "Needs Verify", "email": "verify@example.com", "password": "secure-pass-123"},
     )
 
+    db_generator = client.app.dependency_overrides[get_db]()
+    db = next(db_generator)
+    try:
+        user = db.scalar(select(User).where(User.email == "verify@example.com"))
+        assert user is not None
+        user.is_verified = False
+        db.commit()
+    finally:
+        db_generator.close()
+
+    client.cookies.clear()
     login = client.post(
         "/api/v1/auth/login",
         json={"email": "verify@example.com", "password": "secure-pass-123"},
     )
-    assert login.status_code == 403
+    assert login.status_code == 200
+    assert login.json()["user"]["is_verified"] is True
 
 
 def test_state_changing_request_rejects_untrusted_origin(client: TestClient) -> None:
@@ -120,8 +125,6 @@ def test_password_reset_invalidates_old_password_and_session(
         "/api/v1/auth/register",
         json={"name": "Reset User", "email": "reset@example.com", "password": "secure-pass-123"},
     )
-    verification_token = _token_from_email(auth_setup[-1][2])
-    client.post("/api/v1/auth/verify-email", json={"token": verification_token})
     client.post(
         "/api/v1/auth/login",
         json={"email": "reset@example.com", "password": "secure-pass-123"},
@@ -172,8 +175,6 @@ def test_production_data_requires_auth_and_is_user_scoped(
         "/api/v1/auth/register",
         json={"name": "First User", "email": "first@example.com", "password": "secure-pass-123"},
     )
-    first_verification_token = _token_from_email(auth_setup[-1][2])
-    client.post("/api/v1/auth/verify-email", json={"token": first_verification_token})
     client.post(
         "/api/v1/auth/login",
         json={"email": "first@example.com", "password": "secure-pass-123"},
@@ -192,8 +193,6 @@ def test_production_data_requires_auth_and_is_user_scoped(
         "/api/v1/auth/register",
         json={"name": "Second User", "email": "second@example.com", "password": "secure-pass-123"},
     )
-    second_verification_token = _token_from_email(auth_setup[-1][2])
-    client.post("/api/v1/auth/verify-email", json={"token": second_verification_token})
     client.post(
         "/api/v1/auth/login",
         json={"email": "second@example.com", "password": "secure-pass-123"},

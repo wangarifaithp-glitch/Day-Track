@@ -11,7 +11,7 @@ def require_email_configuration() -> None:
     if not settings.smtp_host or not settings.smtp_sender:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Email verification is not configured on the server.",
+            detail="Password reset email is not configured on the server.",
         )
 
 

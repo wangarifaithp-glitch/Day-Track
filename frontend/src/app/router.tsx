@@ -42,7 +42,6 @@ export function AppRouter() {
       <Route path="/login" element={<AuthPage />} />
       <Route path="/signup" element={<AuthPage />} />
       <Route path="/forgot-password" element={<AuthPage />} />
-      <Route path="/verify-email" element={<AuthPage />} />
       <Route path="/reset-password" element={<AuthPage />} />
       <Route element={<RequireAuth />}>
         <Route element={<AppLayout />}>

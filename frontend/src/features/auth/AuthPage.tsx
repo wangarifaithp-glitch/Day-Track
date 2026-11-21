@@ -40,7 +40,6 @@ export function AuthPage() {
   const mode = location.pathname.slice(1)
   const isSignUp = mode === 'signup'
   const isForgotPassword = mode === 'forgot-password'
-  const isVerifyEmail = mode === 'verify-email'
   const isResetPassword = mode === 'reset-password'
   const token = new URLSearchParams(location.search).get('token') ?? ''
 
@@ -78,7 +77,7 @@ export function AuthPage() {
     setBusy(true)
     try {
       if (isSignUp) {
-        const result = await apiRequest<Message>('/auth/register', {
+        const result = await apiRequest<AuthResponse>('/auth/register', {
           method: 'POST',
           body: JSON.stringify({
             name: `${firstName} ${lastName}`.trim(),
@@ -86,7 +85,8 @@ export function AuthPage() {
             password,
           }),
         })
-        setNotice(result.message)
+        saveLocalProfile(result.user)
+        navigate('/', { replace: true })
       } else if (isForgotPassword) {
         const result = await apiRequest<Message>('/auth/forgot-password', {
           method: 'POST',
@@ -118,49 +118,13 @@ export function AuthPage() {
     }
   }
 
-  async function resendVerification() {
-    setError('')
-    setNotice('')
-    setBusy(true)
-    try {
-      const result = await apiRequest<Message>('/auth/resend-verification', {
-        method: 'POST',
-        body: JSON.stringify({ email }),
-      })
-      setNotice(result.message)
-    } catch (requestError) {
-      setError(getErrorMessage(requestError))
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  async function verifyEmail() {
-    setBusy(true)
-    setError('')
-    try {
-      if (!token) throw new Error('Verification link is missing its token.')
-      const result = await apiRequest<Message>('/auth/verify-email', {
-        method: 'POST',
-        body: JSON.stringify({ token }),
-      })
-      setNotice(result.message)
-    } catch (requestError) {
-      setError(getErrorMessage(requestError))
-    } finally {
-      setBusy(false)
-    }
-  }
-
   const title = isSignUp
     ? 'Create an account'
     : isForgotPassword
       ? 'Reset your password'
-      : isVerifyEmail
-        ? 'Verify your email'
-        : isResetPassword
-          ? 'Choose a new password'
-          : 'Welcome back'
+      : isResetPassword
+        ? 'Choose a new password'
+        : 'Welcome back'
 
   return (
     <main className="grid min-h-screen place-items-center bg-[#1a1d36] px-3 py-4 text-white sm:px-6 sm:py-8">
@@ -204,8 +168,8 @@ export function AuthPage() {
             {title}
           </h1>
           <p className="mt-3 text-sm text-white/55">
-            {isSignUp ? 'Already have an account?' : !isForgotPassword && !isVerifyEmail && !isResetPassword ? 'New to Daywise?' : 'Secure access to your DAYTRACK account.'}
-            {!isForgotPassword && !isVerifyEmail && !isResetPassword && (
+            {isSignUp ? 'Already have an account?' : !isForgotPassword && !isResetPassword ? 'New to Daywise?' : 'Secure access to your DAYTRACK account.'}
+            {!isForgotPassword && !isResetPassword && (
               <Link
                 to={isSignUp ? '/login' : '/signup'}
                 className="ml-1.5 border-b border-white/55 pb-0.5 text-white/75 transition hover:text-white"
@@ -214,43 +178,17 @@ export function AuthPage() {
               </Link>
             )}
           </p>
+          {isSignUp && (
+            <p className="mt-2 text-sm text-white/55">
+              Start using DAYTRACK immediately. Email verification isn’t required.
+            </p>
+          )}
 
-          {isVerifyEmail ? (
-            <div className="mt-8 space-y-4">
-              <p className="text-sm leading-6 text-white/65">
-                Use the verification link sent to your email address to activate your account.
-              </p>
-              {notice ? (
-                <p role="status" className="rounded-lg bg-emerald-500/10 p-3 text-sm text-emerald-200">{notice}</p>
-              ) : (
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => void verifyEmail()}
-                  className="h-12 w-full rounded-lg bg-[#6868d9] text-sm font-semibold text-white transition hover:bg-[#7778e6] disabled:opacity-50"
-                >
-                  {busy ? 'Verifying…' : 'Verify email'}
-                </button>
-              )}
-              <Link to="/login" className="block text-center text-sm text-white/65 underline underline-offset-4">
-                Back to log in
-              </Link>
-            </div>
-          ) : notice && !isVerifyEmail ? (
+          {notice ? (
             <div className="mt-8 space-y-4">
               <p role="status" className="rounded-lg bg-emerald-500/10 p-4 text-sm leading-6 text-emerald-200">
                 {notice}
               </p>
-              {isSignUp && (
-                <button
-                  type="button"
-                  disabled={busy || !email}
-                  onClick={() => void resendVerification()}
-                  className="h-11 w-full rounded-lg border border-white/15 text-sm font-medium text-white/75 hover:bg-white/[0.05] disabled:opacity-50"
-                >
-                  Resend verification email
-                </button>
-              )}
               <Link to="/login" className="block text-center text-sm text-white/65 underline underline-offset-4">
                 Back to log in
               </Link>
@@ -375,7 +313,7 @@ export function AuthPage() {
 
               <button
                 type="submit"
-                disabled={busy || (isSignUp && !acceptedTerms) || ((isVerifyEmail || isResetPassword) && !token)}
+                disabled={busy || (isSignUp && !acceptedTerms) || (isResetPassword && !token)}
                 className="h-12 w-full rounded-lg border border-white/10 bg-[#6868d9] text-sm font-semibold text-white transition hover:bg-[#7778e6] disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {busy
@@ -397,10 +335,6 @@ export function AuthPage() {
                 <p role="alert" className="text-sm text-rose-300">This reset link is missing its token.</p>
               )}
             </form>
-          )}
-
-          {error && isVerifyEmail && (
-            <p role="alert" className="mt-4 text-sm text-rose-300">{error}</p>
           )}
         </div>
       </section>
