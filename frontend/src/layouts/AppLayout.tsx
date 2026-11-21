@@ -5,6 +5,12 @@ import { Header } from '../components/navigation/Header'
 type Theme = 'light' | 'dark'
 export type Palette = 'forest' | 'flow' | 'warm'
 
+export type UserProfile = {
+  name: string
+  email: string
+  photo: string | null
+}
+
 type AppearanceSettings = {
   theme: Theme
   setTheme: (theme: Theme) => void
@@ -12,9 +18,30 @@ type AppearanceSettings = {
   setPalette: (palette: Palette) => void
   backgroundImage: string | null
   setBackgroundImage: (image: string | null) => void
+  profile: UserProfile
+  setProfile: (profile: UserProfile) => void
 }
 
 const AppearanceContext = createContext<AppearanceSettings | null>(null)
+const DEFAULT_PROFILE: UserProfile = { name: '', email: '', photo: null }
+
+function isUserProfile(value: unknown): value is UserProfile {
+  if (!value || typeof value !== 'object') return false
+  const profile = value as Record<string, unknown>
+  return (
+    typeof profile.name === 'string' &&
+    typeof profile.email === 'string' &&
+    (typeof profile.photo === 'string' || profile.photo === null)
+  )
+}
+
+function getStoredProfile(): UserProfile {
+  const storedProfile = window.localStorage.getItem('daywise-user-profile')
+  if (!storedProfile) return DEFAULT_PROFILE
+
+  const parsedProfile: unknown = JSON.parse(storedProfile)
+  return isUserProfile(parsedProfile) ? parsedProfile : DEFAULT_PROFILE
+}
 
 const LEGACY_WALLPAPERS: Record<string, string> = {
   '/wallpapers/quiet-forest.svg': '/wallpapers/alpine-lake.jpg',
@@ -56,6 +83,7 @@ export function AppLayout() {
   const [backgroundImage, setBackgroundImageState] = useState<string | null>(() =>
     getStoredBackgroundImage(),
   )
+  const [profile, setProfileState] = useState<UserProfile>(() => getStoredProfile())
 
   const setTheme = useCallback((nextTheme: Theme) => {
     window.localStorage.setItem('daywise-theme', nextTheme)
@@ -76,6 +104,11 @@ export function AppLayout() {
     setBackgroundImageState(image)
   }, [])
 
+  const setProfile = useCallback((nextProfile: UserProfile) => {
+    window.localStorage.setItem('daywise-user-profile', JSON.stringify(nextProfile))
+    setProfileState(nextProfile)
+  }, [])
+
   useEffect(() => {
     const root = document.documentElement
     root.dataset.theme = theme
@@ -89,7 +122,16 @@ export function AppLayout() {
 
   return (
     <AppearanceContext.Provider
-      value={{ theme, setTheme, palette, setPalette, backgroundImage, setBackgroundImage }}
+      value={{
+        theme,
+        setTheme,
+        palette,
+        setPalette,
+        backgroundImage,
+        setBackgroundImage,
+        profile,
+        setProfile,
+      }}
     >
       <div
         data-theme={theme}

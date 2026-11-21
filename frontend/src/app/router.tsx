@@ -31,6 +31,10 @@ const SettingsPage = lazy(() =>
   import('../features/settings/SettingsPage').then((module) => ({ default: module.SettingsPage })),
 )
 
+const ProfilePage = lazy(() =>
+  import('../features/profile/ProfilePage').then((module) => ({ default: module.ProfilePage })),
+)
+
 export function AppRouter() {
   return (
     <Routes>
@@ -87,6 +91,14 @@ export function AppRouter() {
           element={
             <Suspense fallback={<div className="grid min-h-64 place-items-center text-sm text-slate-400">Loading settings…</div>}>
               <SettingsPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="profile"
+          element={
+            <Suspense fallback={<div className="grid min-h-64 place-items-center text-sm text-slate-400">Loading profile…</div>}>
+              <ProfilePage />
             </Suspense>
           }
         />

@@ -3,6 +3,7 @@ import { Link, NavLink } from 'react-router-dom'
 import { IconButton } from '../ui/IconButton'
 import { NotificationCenter } from './NotificationCenter'
 import { navigationItems } from './navigationItems'
+import { useAppearance } from '../../layouts/AppLayout'
 
 type HeaderProps = {
   theme: 'light' | 'dark'
@@ -10,6 +11,8 @@ type HeaderProps = {
 }
 
 export function Header({ theme, onToggleTheme }: HeaderProps) {
+  const { profile } = useAppearance()
+
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-[#f7f8f5]/95 backdrop-blur">
       <div className="flex h-[72px] items-center justify-between px-4 md:px-8">
@@ -60,7 +63,15 @@ export function Header({ theme, onToggleTheme }: HeaderProps) {
                   }`
                 }
               >
-                <Icon size={15} />
+                {item.path === '/profile' && profile.photo ? (
+                  <img
+                    src={profile.photo}
+                    alt=""
+                    className="size-5 rounded-full object-cover"
+                  />
+                ) : (
+                  <Icon size={15} />
+                )}
                 <span>{item.label}</span>
               </NavLink>
             )
